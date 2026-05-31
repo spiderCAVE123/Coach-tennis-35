@@ -352,7 +352,7 @@ technique_score, footwork_feedback, swing_timing, contact_point, balance_rating,
             api_key=EMERGENT_LLM_KEY,
             session_id=f"analysis_{request.video_id}",
             system_message="You are a professional tennis coach analyzing technique. Provide detailed, actionable feedback."
-        ).with_model("openai", "gpt-5.4")
+        ).with_model("openai", "gpt-4o")
         
         user_message = UserMessage(text=prompt)
         response = await chat.send_message(user_message)
@@ -472,7 +472,7 @@ Format as JSON with keys: daily_drills (array), weekly_schedule (array), improve
             api_key=EMERGENT_LLM_KEY,
             session_id=f"training_{user['user_id']}",
             system_message="You are a professional tennis coach creating personalized training plans."
-        ).with_model("openai", "gpt-5.4")
+        ).with_model("openai", "gpt-4o")
         
         user_message = UserMessage(text=prompt)
         response = await chat.send_message(user_message)
@@ -623,7 +623,7 @@ async def chat_with_coach(
             api_key=EMERGENT_LLM_KEY,
             session_id=chat_history.get('chat_id', f"chat_{user['user_id']}"),
             system_message=system_msg
-        ).with_model("openai", "gpt-5.4")
+        ).with_model("openai", "gpt-4o")
         
         user_message = UserMessage(text=message.message)
         response = await chat.send_message(user_message)
@@ -743,7 +743,16 @@ async def get_challenges(authorization: Optional[str] = Header(None)):
         ]
         
         await db.challenges.insert_many(daily_challenges)
-        challenges = daily_challenges
+        # Re-fetch from database to exclude _id
+        challenges = await db.challenges.find(
+            {
+                "user_id": user['user_id'],
+                "created_at": {
+                    "$gte": datetime.combine(today, datetime.min.time()).replace(tzinfo=timezone.utc)
+                }
+            },
+            {"_id": 0}
+        ).to_list(100)
     
     return {"challenges": challenges}
 

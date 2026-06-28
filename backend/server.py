@@ -43,6 +43,9 @@ class User(BaseModel):
     level: int = 1
     premium: bool = False
     streak_days: int = 0
+    total_matches: int = 0
+    total_practice_hours: float = 0.0
+    achievements: List[str] = []
     last_activity: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -68,6 +71,10 @@ class VideoUpload(BaseModel):
     analyzed: bool = False
     analysis_result: Optional[Dict[str, Any]] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class VideoUploadRequest(BaseModel):
+    shot_type: str
+    video_base64: str
 
 class VideoAnalysisRequest(BaseModel):
     video_id: str
@@ -134,6 +141,82 @@ class Challenge(BaseModel):
     completed: bool = False
     reward_xp: int = 0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# Match Models
+class Match(BaseModel):
+    match_id: str
+    user_id: str
+    opponent_name: str
+    match_date: datetime
+    result: str  # won, lost
+    score: str  # e.g., "6-4, 6-3"
+    duration_minutes: int
+    aces: int = 0
+    double_faults: int = 0
+    winners: int = 0
+    unforced_errors: int = 0
+    first_serve_percentage: float = 0.0
+    break_points_won: int = 0
+    break_points_total: int = 0
+    notes: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class MatchCreate(BaseModel):
+    opponent_name: str
+    match_date: str
+    result: str
+    score: str
+    duration_minutes: int
+    aces: int = 0
+    double_faults: int = 0
+    winners: int = 0
+    unforced_errors: int = 0
+    first_serve_percentage: float = 0.0
+    break_points_won: int = 0
+    break_points_total: int = 0
+    notes: Optional[str] = None
+
+# Settings Models
+class UserSettings(BaseModel):
+    user_id: str
+    notifications_enabled: bool = True
+    email_notifications: bool = True
+    practice_reminders: bool = True
+    weekly_summary: bool = True
+    theme: str = "dark"
+    language: str = "en"
+    units: str = "metric"  # metric or imperial
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class SettingsUpdate(BaseModel):
+    notifications_enabled: Optional[bool] = None
+    email_notifications: Optional[bool] = None
+    practice_reminders: Optional[bool] = None
+    weekly_summary: Optional[bool] = None
+    theme: Optional[str] = None
+    language: Optional[str] = None
+    units: Optional[str] = None
+
+# Friend Models
+class FriendRequest(BaseModel):
+    request_id: str
+    from_user_id: str
+    to_user_id: str
+    status: str  # pending, accepted, rejected
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Friendship(BaseModel):
+    friendship_id: str
+    user1_id: str
+    user2_id: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class FriendRequestCreate(BaseModel):
+    to_user_id: str
+
+class FriendRequestAction(BaseModel):
+    request_id: str
+    action: str  # accept or reject
 
 # ==================== AUTH HELPER ====================
 
@@ -264,8 +347,7 @@ async def logout(authorization: Optional[str] = Header(None)):
 
 @api_router.post("/videos/upload")
 async def upload_video(
-    shot_type: str = Form(...),
-    video_base64: str = Form(...),
+    upload_data: VideoUploadRequest,
     authorization: Optional[str] = Header(None)
 ):
     """Upload a tennis video for analysis"""
@@ -292,8 +374,8 @@ async def upload_video(
         video = VideoUpload(
             video_id=video_id,
             user_id=user['user_id'],
-            shot_type=shot_type,
-            video_data=video_base64,
+            shot_type=upload_data.shot_type,
+            video_data=upload_data.video_base64,
             analyzed=False
         )
         
@@ -793,6 +875,494 @@ async def upgrade_to_premium(authorization: Optional[str] = Header(None)):
         "message": "Upgraded to premium!"
     }
 
+# ==================== MATCH TRACKING ENDPOINTS ====================
+
+@api_router.post("/matches/create")
+async def create_match(match: MatchCreate, authorization: Optional[str] = Header(None)):
+    """Create a new match record"""
+    user = await get_current_user(authorization)
+    
+    try:
+        match_id = f"match_{uuid.uuid4().hex[:12]}"
+        
+        match_record = Match(
+            match_id=match_id,
+            user_id=user['user_id'],
+            opponent_name=match.opponent_name,
+            match_date=datetime.fromisoformat(match.match_date.replace('Z', '+00:00')),
+            result=match.result,
+            score=match.score,
+            duration_minutes=match.duration_minutes,
+            aces=match.aces,
+            double_faults=match.double_faults,
+            winners=match.winners,
+            unforced_errors=match.unforced_errors,
+            first_serve_percentage=match.first_serve_percentage,
+            break_points_won=match.break_points_won,
+            break_points_total=match.break_points_total,
+            notes=match.notes
+        )
+        
+        await db.matches.insert_one(match_record.dict())
+        
+        # Update user stats
+        await db.users.update_one(
+            {"user_id": user['user_id']},
+            {
+                "$inc": {
+                    "total_matches": 1,
+                    "total_practice_hours": match.duration_minutes / 60.0,
+                    "xp": 100 if match.result == "won" else 50
+                }
+            }
+        )
+        
+        # Check for achievements
+        user_matches = await db.matches.find({"user_id": user['user_id']}).to_list(1000)
+        if len(user_matches) == 1:
+            await award_achievement(user['user_id'], "first_match", "First Match Played")
+        elif len(user_matches) == 10:
+            await award_achievement(user['user_id'], "match_veteran", "10 Matches Played")
+        
+        return {
+            "success": True,
+            "match_id": match_id,
+            "xp_earned": 100 if match.result == "won" else 50
+        }
+        
+    except Exception as e:
+        logging.error(f"Match creation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/matches/list")
+async def list_matches(authorization: Optional[str] = Header(None)):
+    """Get user's match history"""
+    user = await get_current_user(authorization)
+    
+    matches = await db.matches.find(
+        {"user_id": user['user_id']},
+        {"_id": 0}
+    ).sort("match_date", -1).to_list(100)
+    
+    return {"matches": matches}
+
+@api_router.get("/matches/stats")
+async def get_match_stats(authorization: Optional[str] = Header(None)):
+    """Get match statistics"""
+    user = await get_current_user(authorization)
+    
+    matches = await db.matches.find(
+        {"user_id": user['user_id']},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    if not matches:
+        return {
+            "total_matches": 0,
+            "wins": 0,
+            "losses": 0,
+            "win_percentage": 0,
+            "total_hours": 0,
+            "avg_aces": 0,
+            "avg_double_faults": 0,
+            "avg_first_serve": 0
+        }
+    
+    wins = sum(1 for m in matches if m['result'] == 'won')
+    losses = len(matches) - wins
+    total_minutes = sum(m['duration_minutes'] for m in matches)
+    
+    stats = {
+        "total_matches": len(matches),
+        "wins": wins,
+        "losses": losses,
+        "win_percentage": round((wins / len(matches)) * 100, 1) if matches else 0,
+        "total_hours": round(total_minutes / 60, 1),
+        "avg_aces": round(sum(m['aces'] for m in matches) / len(matches), 1),
+        "avg_double_faults": round(sum(m['double_faults'] for m in matches) / len(matches), 1),
+        "avg_first_serve": round(sum(m['first_serve_percentage'] for m in matches) / len(matches), 1),
+        "recent_form": [m['result'] for m in matches[:5]]
+    }
+    
+    return stats
+
+# ==================== ACHIEVEMENTS ENDPOINTS ====================
+
+async def award_achievement(user_id: str, badge_name: str, description: str):
+    """Award an achievement to a user"""
+    # Check if already earned
+    existing = await db.achievements.find_one({
+        "user_id": user_id,
+        "badge_name": badge_name
+    })
+    
+    if existing:
+        return False
+    
+    achievement_id = f"achievement_{uuid.uuid4().hex[:12]}"
+    achievement = Achievement(
+        achievement_id=achievement_id,
+        user_id=user_id,
+        badge_name=badge_name,
+        description=description
+    )
+    
+    await db.achievements.insert_one(achievement.dict())
+    
+    # Add to user's achievements list
+    await db.users.update_one(
+        {"user_id": user_id},
+        {"$addToSet": {"achievements": badge_name}}
+    )
+    
+    return True
+
+@api_router.get("/achievements/list")
+async def list_achievements(authorization: Optional[str] = Header(None)):
+    """Get user's achievements"""
+    user = await get_current_user(authorization)
+    
+    achievements = await db.achievements.find(
+        {"user_id": user['user_id']},
+        {"_id": 0}
+    ).sort("earned_at", -1).to_list(100)
+    
+    # Available achievements
+    all_achievements = [
+        {"id": "first_upload", "name": "First Steps", "description": "Upload your first video", "icon": "videocam"},
+        {"id": "first_match", "name": "Match Day", "description": "Play your first match", "icon": "trophy"},
+        {"id": "7_day_streak", "name": "Week Warrior", "description": "7 day training streak", "icon": "flame"},
+        {"id": "level_5", "name": "Rising Star", "description": "Reach level 5", "icon": "star"},
+        {"id": "level_10", "name": "Expert Player", "description": "Reach level 10", "icon": "star-outline"},
+        {"id": "50_videos", "name": "Analysis Pro", "description": "Analyze 50 videos", "icon": "stats-chart"},
+        {"id": "match_veteran", "name": "Match Veteran", "description": "Play 10 matches", "icon": "tennisball"},
+        {"id": "100_hours", "name": "Dedicated", "description": "100 hours of practice", "icon": "time"},
+    ]
+    
+    earned_badges = [a['badge_name'] for a in achievements]
+    
+    for achievement in all_achievements:
+        achievement['earned'] = achievement['id'] in earned_badges
+        achievement['earned_date'] = next(
+            (a['earned_at'] for a in achievements if a['badge_name'] == achievement['id']),
+            None
+        )
+    
+    return {
+        "achievements": all_achievements,
+        "total_earned": len(earned_badges),
+        "total_available": len(all_achievements)
+    }
+
+# ==================== SETTINGS ENDPOINTS ====================
+
+@api_router.get("/settings")
+async def get_settings(authorization: Optional[str] = Header(None)):
+    """Get user settings"""
+    user = await get_current_user(authorization)
+    
+    settings = await db.settings.find_one(
+        {"user_id": user['user_id']},
+        {"_id": 0}
+    )
+    
+    if not settings:
+        # Create default settings
+        settings = UserSettings(user_id=user['user_id']).dict()
+        await db.settings.insert_one(settings)
+    
+    return settings
+
+@api_router.put("/settings")
+async def update_settings(
+    settings_update: SettingsUpdate,
+    authorization: Optional[str] = Header(None)
+):
+    """Update user settings"""
+    user = await get_current_user(authorization)
+    
+    # Get current settings
+    current_settings = await db.settings.find_one({"user_id": user['user_id']})
+    
+    if not current_settings:
+        # Create if doesn't exist
+        current_settings = UserSettings(user_id=user['user_id']).dict()
+        await db.settings.insert_one(current_settings)
+    
+    # Update only provided fields
+    update_dict = {k: v for k, v in settings_update.dict().items() if v is not None}
+    update_dict['updated_at'] = datetime.now(timezone.utc)
+    
+    await db.settings.update_one(
+        {"user_id": user['user_id']},
+        {"$set": update_dict}
+    )
+    
+    return {"success": True, "message": "Settings updated"}
+
+# ==================== FRIENDS/SOCIAL ENDPOINTS ====================
+
+@api_router.get("/friends/search")
+async def search_users(query: str, authorization: Optional[str] = Header(None)):
+    """Search for users by name or email"""
+    user = await get_current_user(authorization)
+    
+    if not query or len(query) < 2:
+        return {"users": []}
+    
+    # Search by name or email (case insensitive)
+    users = await db.users.find(
+        {
+            "$or": [
+                {"name": {"$regex": query, "$options": "i"}},
+                {"email": {"$regex": query, "$options": "i"}}
+            ],
+            "user_id": {"$ne": user['user_id']}  # Exclude current user
+        },
+        {"_id": 0, "user_id": 1, "name": 1, "email": 1, "picture": 1, "level": 1, "xp": 1}
+    ).limit(20).to_list(20)
+    
+    return {"users": users}
+
+@api_router.post("/friends/request")
+async def send_friend_request(
+    request_data: FriendRequestCreate,
+    authorization: Optional[str] = Header(None)
+):
+    """Send a friend request"""
+    user = await get_current_user(authorization)
+    
+    try:
+        # Check if already friends
+        existing_friendship = await db.friendships.find_one({
+            "$or": [
+                {"user1_id": user['user_id'], "user2_id": request_data.to_user_id},
+                {"user1_id": request_data.to_user_id, "user2_id": user['user_id']}
+            ]
+        })
+        
+        if existing_friendship:
+            raise HTTPException(status_code=400, detail="Already friends")
+        
+        # Check if request already exists
+        existing_request = await db.friend_requests.find_one({
+            "from_user_id": user['user_id'],
+            "to_user_id": request_data.to_user_id,
+            "status": "pending"
+        })
+        
+        if existing_request:
+            raise HTTPException(status_code=400, detail="Friend request already sent")
+        
+        # Create friend request
+        request_id = f"req_{uuid.uuid4().hex[:12]}"
+        friend_request = FriendRequest(
+            request_id=request_id,
+            from_user_id=user['user_id'],
+            to_user_id=request_data.to_user_id,
+            status="pending"
+        )
+        
+        await db.friend_requests.insert_one(friend_request.dict())
+        
+        return {"success": True, "request_id": request_id}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Friend request error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/friends/requests")
+async def get_friend_requests(authorization: Optional[str] = Header(None)):
+    """Get pending friend requests"""
+    user = await get_current_user(authorization)
+    
+    # Get incoming requests
+    incoming_requests = await db.friend_requests.find(
+        {"to_user_id": user['user_id'], "status": "pending"},
+        {"_id": 0}
+    ).to_list(100)
+    
+    # Get user info for each request
+    for request in incoming_requests:
+        from_user = await db.users.find_one(
+            {"user_id": request['from_user_id']},
+            {"_id": 0, "user_id": 1, "name": 1, "email": 1, "picture": 1, "level": 1}
+        )
+        request['from_user'] = from_user
+    
+    # Get outgoing requests
+    outgoing_requests = await db.friend_requests.find(
+        {"from_user_id": user['user_id'], "status": "pending"},
+        {"_id": 0}
+    ).to_list(100)
+    
+    # Get user info for outgoing requests
+    for request in outgoing_requests:
+        to_user = await db.users.find_one(
+            {"user_id": request['to_user_id']},
+            {"_id": 0, "user_id": 1, "name": 1, "email": 1, "picture": 1, "level": 1}
+        )
+        request['to_user'] = to_user
+    
+    return {
+        "incoming": incoming_requests,
+        "outgoing": outgoing_requests
+    }
+
+@api_router.post("/friends/respond")
+async def respond_to_friend_request(
+    action: FriendRequestAction,
+    authorization: Optional[str] = Header(None)
+):
+    """Accept or reject a friend request"""
+    user = await get_current_user(authorization)
+    
+    try:
+        # Get the request
+        request = await db.friend_requests.find_one({
+            "request_id": action.request_id,
+            "to_user_id": user['user_id'],
+            "status": "pending"
+        })
+        
+        if not request:
+            raise HTTPException(status_code=404, detail="Friend request not found")
+        
+        if action.action == "accept":
+            # Create friendship
+            friendship_id = f"friendship_{uuid.uuid4().hex[:12]}"
+            friendship = Friendship(
+                friendship_id=friendship_id,
+                user1_id=request['from_user_id'],
+                user2_id=user['user_id']
+            )
+            await db.friendships.insert_one(friendship.dict())
+            
+            # Update request status
+            await db.friend_requests.update_one(
+                {"request_id": action.request_id},
+                {"$set": {"status": "accepted"}}
+            )
+            
+            return {"success": True, "message": "Friend request accepted"}
+        else:
+            # Reject request
+            await db.friend_requests.update_one(
+                {"request_id": action.request_id},
+                {"$set": {"status": "rejected"}}
+            )
+            
+            return {"success": True, "message": "Friend request rejected"}
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Friend response error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/friends/list")
+async def get_friends_list(authorization: Optional[str] = Header(None)):
+    """Get user's friends list"""
+    user = await get_current_user(authorization)
+    
+    # Get all friendships
+    friendships = await db.friendships.find({
+        "$or": [
+            {"user1_id": user['user_id']},
+            {"user2_id": user['user_id']}
+        ]
+    }, {"_id": 0}).to_list(1000)
+    
+    # Get friend user IDs
+    friend_ids = []
+    for friendship in friendships:
+        if friendship['user1_id'] == user['user_id']:
+            friend_ids.append(friendship['user2_id'])
+        else:
+            friend_ids.append(friendship['user1_id'])
+    
+    # Get friend details
+    friends = await db.users.find(
+        {"user_id": {"$in": friend_ids}},
+        {"_id": 0, "user_id": 1, "name": 1, "email": 1, "picture": 1, "level": 1, "xp": 1, "total_matches": 1}
+    ).to_list(1000)
+    
+    return {"friends": friends, "total": len(friends)}
+
+@api_router.get("/friends/profile/{user_id}")
+async def get_friend_profile(user_id: str, authorization: Optional[str] = Header(None)):
+    """Get a friend's profile and stats"""
+    current_user = await get_current_user(authorization)
+    
+    # Check if they are friends
+    friendship = await db.friendships.find_one({
+        "$or": [
+            {"user1_id": current_user['user_id'], "user2_id": user_id},
+            {"user1_id": user_id, "user2_id": current_user['user_id']}
+        ]
+    })
+    
+    if not friendship:
+        raise HTTPException(status_code=403, detail="Not friends with this user")
+    
+    # Get user profile
+    friend = await db.users.find_one(
+        {"user_id": user_id},
+        {"_id": 0, "user_id": 1, "name": 1, "picture": 1, "xp": 1, "level": 1, "total_matches": 1, "total_practice_hours": 1, "achievements": 1, "streak_days": 1}
+    )
+    
+    if not friend:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get friend's progress stats
+    progress = await db.progress.find(
+        {"user_id": user_id},
+        {"_id": 0}
+    ).sort("timestamp", -1).limit(20).to_list(20)
+    
+    # Get match stats
+    matches = await db.matches.find({"user_id": user_id}, {"_id": 0}).to_list(100)
+    
+    wins = sum(1 for m in matches if m['result'] == 'won')
+    match_stats = {
+        "total_matches": len(matches),
+        "wins": wins,
+        "losses": len(matches) - wins,
+        "win_percentage": round((wins / len(matches)) * 100, 1) if matches else 0
+    }
+    
+    # Get achievements
+    achievements = await db.achievements.find(
+        {"user_id": user_id},
+        {"_id": 0}
+    ).to_list(100)
+    
+    return {
+        "profile": friend,
+        "recent_progress": progress,
+        "match_stats": match_stats,
+        "achievements": achievements
+    }
+
+@api_router.delete("/friends/remove/{friend_id}")
+async def remove_friend(friend_id: str, authorization: Optional[str] = Header(None)):
+    """Remove a friend"""
+    user = await get_current_user(authorization)
+    
+    result = await db.friendships.delete_one({
+        "$or": [
+            {"user1_id": user['user_id'], "user2_id": friend_id},
+            {"user1_id": friend_id, "user2_id": user['user_id']}
+        ]
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Friendship not found")
+    
+    return {"success": True, "message": "Friend removed"}
+
 # Include the router in the main app
 app.include_router(api_router)
 
@@ -828,6 +1398,9 @@ async def create_indexes():
         await db.achievements.create_index("user_id")
         await db.chat_history.create_index("user_id", unique=True)
         await db.challenges.create_index("user_id")
+        await db.matches.create_index("user_id")
+        await db.matches.create_index("match_id", unique=True)
+        await db.settings.create_index("user_id", unique=True)
         logger.info("MongoDB indexes created successfully")
     except Exception as e:
         logger.error(f"Error creating indexes: {e}")

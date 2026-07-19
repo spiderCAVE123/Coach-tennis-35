@@ -16,9 +16,11 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Card } from '../../src/components/Card';
 import { Button } from '../../src/components/Button';
+import { XPToken } from '../../src/components/XPToken';
 import { COLORS, SPACING, FONT_SIZES } from '../../src/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { VideoAnalysis } from '../../src/types';
+import { playXPSound, playCoinSound } from '../../src/utils/sounds';
 
 export default function AnalysisScreen() {
   const params = useLocalSearchParams();
@@ -39,6 +41,15 @@ export default function AnalysisScreen() {
       withDelay(800, withSpring(1.3)),
       withSpring(1)
     );
+
+    // Play sounds
+    setTimeout(() => {
+      playCoinSound();
+    }, 400);
+    
+    setTimeout(() => {
+      playXPSound();
+    }, 800);
   }, []);
 
   const scoreAnimatedStyle = useAnimatedStyle(() => {
@@ -79,12 +90,9 @@ export default function AnalysisScreen() {
         {/* Header with XP Badge */}
         <Animated.View entering={FadeInDown.duration(600)} style={styles.header}>
           <Text style={styles.title}>Analysis Complete</Text>
-          <Animated.View entering={BounceIn.delay(400).duration(800)} style={starAnimatedStyle}>
-            <View style={styles.xpBadge}>
-              <Ionicons name="star" size={24} color={COLORS.warning} />
-              <Text style={styles.xpText}>+{xpEarned} XP</Text>
-            </View>
-          </Animated.View>
+          <View style={styles.xpTokenContainer}>
+            <XPToken amount={xpEarned} animated size="large" />
+          </View>
         </Animated.View>
 
         {/* Technique Score - Big Reveal */}
@@ -245,6 +253,7 @@ const styles = StyleSheet.create({
   errorText: { fontSize: FONT_SIZES.lg, color: COLORS.error },
   header: { alignItems: 'center', marginBottom: SPACING.xl },
   title: { fontSize: FONT_SIZES.xxxl, fontWeight: '800', color: COLORS.white, textAlign: 'center', marginBottom: SPACING.md },
+  xpTokenContainer: { marginTop: SPACING.md, marginBottom: SPACING.md },
   xpBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.secondary, paddingVertical: SPACING.md, paddingHorizontal: SPACING.xl, borderRadius: 30, gap: SPACING.sm, borderWidth: 2, borderColor: COLORS.warning },
   xpText: { fontSize: FONT_SIZES.xl, fontWeight: '800', color: COLORS.warning },
   scoreCard: { alignItems: 'center', marginBottom: SPACING.lg, padding: SPACING.xl, backgroundColor: 'rgba(26, 26, 26, 0.8)' },

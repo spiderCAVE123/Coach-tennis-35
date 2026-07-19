@@ -25,9 +25,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Card } from '../../src/components/Card';
 import { Button } from '../../src/components/Button';
+import { XPToken } from '../../src/components/XPToken';
 import { COLORS, SPACING, FONT_SIZES } from '../../src/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../src/services/api';
+import {
+  playTimerStartSound,
+  playTimerEndSound,
+  playDrillCompleteSound,
+  playVictorySound,
+  playCountdownTick,
+} from '../../src/utils/sounds';
 
 const { width } = Dimensions.get('window');
 
@@ -86,6 +94,10 @@ export default function WorkoutSessionScreen() {
                 startNextDrill();
                 return 15;
               }
+              // Play countdown tick for last 3 seconds
+              if (prev <= 4) {
+                playCountdownTick();
+              }
               return prev - 1;
             });
           }
@@ -111,11 +123,13 @@ export default function WorkoutSessionScreen() {
   }, [currentDrillIndex]);
 
   const startWorkout = () => {
+    playTimerStartSound();
     setWorkoutState('exercise');
     setTimeElapsed(0);
   };
 
   const completeDrill = () => {
+    playDrillCompleteSound();
     setCompletedDrills([...completedDrills, currentDrillIndex]);
     
     if (currentDrillIndex >= totalDrills - 1) {
@@ -123,6 +137,7 @@ export default function WorkoutSessionScreen() {
       finishWorkout();
     } else {
       // Move to rest
+      playTimerEndSound();
       setWorkoutState('rest');
       setRestTime(15);
       setTimeElapsed(0);
@@ -130,6 +145,7 @@ export default function WorkoutSessionScreen() {
   };
 
   const startNextDrill = () => {
+    playTimerStartSound();
     setCurrentDrillIndex((prev) => prev + 1);
     setWorkoutState('exercise');
     setTimeElapsed(0);
@@ -189,6 +205,11 @@ export default function WorkoutSessionScreen() {
     if (timerRef.current) clearInterval(timerRef.current);
     if (totalTimerRef.current) clearInterval(totalTimerRef.current);
     setWorkoutState('complete');
+
+    // Play victory sound
+    setTimeout(() => {
+      playVictorySound();
+    }, 300);
 
     // Award XP for completing workout
     try {
@@ -321,9 +342,8 @@ export default function WorkoutSessionScreen() {
                   <Text style={styles.statLabel}>Total Time</Text>
                 </View>
                 <View style={styles.statBox}>
-                  <Ionicons name="star" size={32} color={COLORS.warning} />
-                  <Text style={styles.statValue}>+150</Text>
-                  <Text style={styles.statLabel}>XP Earned</Text>
+                  <XPToken amount={150} animated size="small" />
+                  <Text style={styles.statLabel}>Earned</Text>
                 </View>
               </View>
             </Card>

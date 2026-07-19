@@ -459,7 +459,7 @@ export default function WorkoutSessionScreen() {
         </Animated.View>
 
         {/* Timer */}
-        <Animated.View entering={FadeInUp.delay(200).duration(400)} style={pulseAnimatedStyle}>
+        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
           <Card style={styles.timerCard}>
             <Text style={styles.timerLabel}>Time Elapsed</Text>
             <Text style={styles.timerValue}>{formatTime(timeElapsed)}</Text>

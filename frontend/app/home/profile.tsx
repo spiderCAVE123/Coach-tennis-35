@@ -107,28 +107,6 @@ export default function ProfileScreen() {
         </View>
       </Card>
 
-      {/* Pro Players Inspiration */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Learn from the Pros</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {[
-            { name: 'Carlos Alcaraz', style: 'All-Court', signature: 'Explosive Power' },
-            { name: 'Jannik Sinner', style: 'Baseline', signature: 'Precise Groundstrokes' },
-            { name: 'Novak Djokovic', style: 'Defense', signature: 'Return of Serve' },
-            { name: 'Roger Federer', style: 'All-Court', signature: 'One-Handed Backhand' },
-          ].map((player, index) => (
-            <Card key={index} style={styles.proCard}>
-              <View style={styles.proAvatar}>
-                <Ionicons name="tennisball" size={32} color={COLORS.accentBlue} />
-              </View>
-              <Text style={styles.proName}>{player.name}</Text>
-              <Text style={styles.proStyle}>{player.style}</Text>
-              <Text style={styles.proSignature}>{player.signature}</Text>
-            </Card>
-          ))}
-        </ScrollView>
-      </View>
-
       {/* Future Features */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Coming Soon</Text>

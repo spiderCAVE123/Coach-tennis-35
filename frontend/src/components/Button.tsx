@@ -1,6 +1,14 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, ActivityIndicator } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '../constants/theme';
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 interface ButtonProps {
   title: string;
@@ -21,6 +29,26 @@ export const Button: React.FC<ButtonProps> = ({
   loading = false,
   style,
 }) => {
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+      opacity: opacity.value,
+    };
+  });
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.95, { damping: 15 });
+    opacity.value = withTiming(0.8, { duration: 100 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15 });
+    opacity.value = withTiming(1, { duration: 100 });
+  };
+
   const buttonStyle: ViewStyle[] = [
     styles.button,
     styles[`button_${variant}`],
@@ -37,9 +65,11 @@ export const Button: React.FC<ButtonProps> = ({
   ];
 
   return (
-    <TouchableOpacity
-      style={buttonStyle}
+    <AnimatedTouchable
+      style={[buttonStyle, animatedStyle]}
       onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       disabled={disabled || loading}
       activeOpacity={0.8}
     >
@@ -48,7 +78,7 @@ export const Button: React.FC<ButtonProps> = ({
       ) : (
         <Text style={textStyle}>{title}</Text>
       )}
-    </TouchableOpacity>
+    </AnimatedTouchable>
   );
 };
 
@@ -57,6 +87,11 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.md,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: COLORS.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   button_primary: {
     backgroundColor: COLORS.accent,
@@ -68,6 +103,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 2,
     borderColor: COLORS.accent,
+    shadowOpacity: 0.1,
   },
   button_small: {
     paddingVertical: SPACING.sm,

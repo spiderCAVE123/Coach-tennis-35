@@ -137,30 +137,6 @@ export default function Index() {
           </View>
         </View>
 
-        {/* Pro Players Section */}
-        <View style={styles.proSection}>
-          <Text style={styles.sectionTitle}>Learn from the Pros</Text>
-          <Text style={styles.proSubtitle}>
-            Get insights inspired by the best players in the world
-          </Text>
-          <View style={styles.proGrid}>
-            {[
-              { name: 'Carlos Alcaraz', style: 'All-Court Aggression' },
-              { name: 'Jannik Sinner', style: 'Power Baseline' },
-              { name: 'Novak Djokovic', style: 'Defensive Excellence' },
-              { name: 'Roger Federer', style: 'Classic Elegance' },
-            ].map((player, index) => (
-              <View key={index} style={styles.proCard}>
-                <View style={styles.proIcon}>
-                  <Ionicons name="person" size={30} color={COLORS.accent} />
-                </View>
-                <Text style={styles.proName}>{player.name}</Text>
-                <Text style={styles.proStyle}>{player.style}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
         {/* Final CTA */}
         <View style={styles.finalCTA}>
           <Text style={styles.ctaTitle}>Ready to Elevate Your Game?</Text>

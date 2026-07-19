@@ -8,6 +8,13 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  FadeInRight,
+  FadeIn,
+  SlideInRight,
+} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/contexts/AuthContext';
@@ -16,7 +23,6 @@ import { Button } from '../../src/components/Button';
 import { COLORS, SPACING, FONT_SIZES } from '../../src/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../src/services/api';
-import { VictoryLine, VictoryChart, VictoryTheme, VictoryAxis } from 'victory-native';
 
 const { width } = Dimensions.get('window');
 
@@ -72,33 +78,38 @@ export default function HomeScreen() {
         }
       >
         {/* Header */}
-        <View style={styles.header}>
+        <Animated.View entering={FadeInDown.duration(600)} style={styles.header}>
           <View>
             <Text style={styles.greeting}>Welcome back,</Text>
             <Text style={styles.userName}>{user?.name || 'Player'}</Text>
           </View>
-          <View style={styles.levelBadge}>
+          <Animated.View entering={FadeInRight.delay(300).duration(600)} style={styles.levelBadge}>
             <Ionicons name="trophy" size={24} color={COLORS.accent} />
             <Text style={styles.levelText}>Lv {user?.level || 1}</Text>
-          </View>
-        </View>
+          </Animated.View>
+        </Animated.View>
 
         {/* XP Progress */}
-        <Card style={styles.xpCard}>
-          <View style={styles.xpHeader}>
-            <Text style={styles.xpTitle}>Your Progress</Text>
-            <Text style={styles.xpValue}>{user?.xp || 0} XP</Text>
-          </View>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${xpProgress * 100}%` }]} />
-          </View>
-          <Text style={styles.xpSubtext}>
-            {xpToNextLevel - ((user?.xp || 0) % 500)} XP to Level {(user?.level || 1) + 1}
-          </Text>
-        </Card>
+        <Animated.View entering={FadeInUp.delay(200).duration(600)}>
+          <Card style={styles.xpCard}>
+            <View style={styles.xpHeader}>
+              <Text style={styles.xpTitle}>Your Progress</Text>
+              <Text style={styles.xpValue}>{user?.xp || 0} XP</Text>
+            </View>
+            <View style={styles.progressBar}>
+              <Animated.View
+                entering={SlideInRight.delay(400).duration(800)}
+                style={[styles.progressFill, { width: `${xpProgress * 100}%` }]}
+              />
+            </View>
+            <Text style={styles.xpSubtext}>
+              {xpToNextLevel - ((user?.xp || 0) % 500)} XP to Level {(user?.level || 1) + 1}
+            </Text>
+          </Card>
+        </Animated.View>
 
         {/* Quick Stats */}
-        <View style={styles.statsGrid}>
+        <Animated.View entering={FadeIn.delay(400).duration(600)} style={styles.statsGrid}>
           <Card style={styles.statCard}>
             <Ionicons name="flame" size={32} color={COLORS.accent} />
             <Text style={styles.statValue}>{user?.streak_days || 0}</Text>
@@ -116,7 +127,7 @@ export default function HomeScreen() {
             <Text style={styles.statValue}>{stats?.achievements?.length || 0}</Text>
             <Text style={styles.statLabel}>Badges</Text>
           </Card>
-        </View>
+        </Animated.View>
 
         {/* Daily Challenges */}
         <View style={styles.section}>
@@ -148,40 +159,29 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        {/* Recent Performance */}
+        {/* Recent Performance - Simple Progress Display */}
         {stats?.progress_history && stats.progress_history.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Recent Performance</Text>
             <Card style={styles.chartCard}>
-              <VictoryChart
-                width={width - SPACING.lg * 2 - SPACING.lg * 2}
-                height={200}
-                theme={VictoryTheme.material}
-                padding={{ top: 20, bottom: 40, left: 40, right: 20 }}
-              >
-                <VictoryAxis
-                  style={{
-                    axis: { stroke: COLORS.darkGray },
-                    tickLabels: { fill: COLORS.gray, fontSize: 10 },
-                  }}
-                />
-                <VictoryAxis
-                  dependentAxis
-                  style={{
-                    axis: { stroke: COLORS.darkGray },
-                    tickLabels: { fill: COLORS.gray, fontSize: 10 },
-                  }}
-                />
-                <VictoryLine
-                  data={stats.progress_history.slice(-10).map((p: any, i: number) => ({
-                    x: i + 1,
-                    y: p.score,
-                  }))}
-                  style={{
-                    data: { stroke: COLORS.accent, strokeWidth: 3 },
-                  }}
-                />
-              </VictoryChart>
+              <View style={styles.progressList}>
+                {stats.progress_history.slice(-5).reverse().map((p: any, i: number) => (
+                  <View key={i} style={styles.progressItem}>
+                    <Text style={styles.progressDate}>
+                      Video {stats.progress_history.length - i}
+                    </Text>
+                    <View style={styles.progressBarSimple}>
+                      <View 
+                        style={[
+                          styles.progressBarFillSimple, 
+                          { width: `${p.score}%`, backgroundColor: p.score >= 80 ? COLORS.success : p.score >= 60 ? COLORS.warning : COLORS.error }
+                        ]} 
+                      />
+                    </View>
+                    <Text style={styles.progressScore}>{p.score}</Text>
+                  </View>
+                ))}
+              </View>
             </Card>
           </View>
         )}
@@ -389,6 +389,36 @@ const styles = StyleSheet.create({
   },
   chartCard: {
     padding: SPACING.sm,
+  },
+  progressList: {
+    gap: SPACING.md,
+  },
+  progressItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+  },
+  progressDate: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.gray,
+    width: 70,
+  },
+  progressBarSimple: {
+    flex: 1,
+    height: 12,
+    backgroundColor: COLORS.darkGray,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  progressBarFillSimple: {
+    height: '100%',
+  },
+  progressScore: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: '700',
+    color: COLORS.accent,
+    width: 40,
+    textAlign: 'right',
   },
   shotCard: {
     marginBottom: SPACING.sm,

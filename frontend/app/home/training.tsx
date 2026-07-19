@@ -211,7 +211,7 @@ export default function TrainingScreen() {
               </View>
 
               <Button
-                title="🎯 Start Training"
+                title="Start Training"
                 onPress={() => router.push({
                   pathname: '/home/workout-session',
                   params: { plan: JSON.stringify(plan) }

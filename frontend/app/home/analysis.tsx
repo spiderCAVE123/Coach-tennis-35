@@ -68,12 +68,7 @@ export default function AnalysisScreen() {
       ? COLORS.warning
       : COLORS.error;
 
-  const scoreEmoji =
-    analysis.technique_score >= 90 ? '🔥'
-    : analysis.technique_score >= 80 ? '🎯'
-    : analysis.technique_score >= 70 ? '👍'
-    : analysis.technique_score >= 60 ? '💪'
-    : '📈';
+  const scoreEmoji = '';
 
   return (
     <LinearGradient
@@ -83,7 +78,7 @@ export default function AnalysisScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header with XP Badge */}
         <Animated.View entering={FadeInDown.duration(600)} style={styles.header}>
-          <Text style={styles.title}>✨ Analysis Complete!</Text>
+          <Text style={styles.title}>Analysis Complete</Text>
           <Animated.View entering={BounceIn.delay(400).duration(800)} style={starAnimatedStyle}>
             <View style={styles.xpBadge}>
               <Ionicons name="star" size={24} color={COLORS.warning} />
@@ -95,7 +90,7 @@ export default function AnalysisScreen() {
         {/* Technique Score - Big Reveal */}
         <Animated.View entering={ZoomIn.delay(200).duration(800)}>
           <Card style={styles.scoreCard}>
-            <Text style={styles.scoreLabel}>Your Score {scoreEmoji}</Text>
+            <Text style={styles.scoreLabel}>Technique Score</Text>
             <Animated.View style={scoreAnimatedStyle}>
               <View style={styles.scoreCircle}>
                 <Text style={[styles.scoreValue, { color: scoreColor }]}>
@@ -117,11 +112,11 @@ export default function AnalysisScreen() {
               />
             </View>
             <Text style={styles.scoreMessage}>
-              {analysis.technique_score >= 90 ? '🏆 Outstanding!' :
-               analysis.technique_score >= 80 ? '🎉 Excellent work!' :
-               analysis.technique_score >= 70 ? '👏 Great job!' :
-               analysis.technique_score >= 60 ? '💪 Good effort!' :
-               '📈 Keep practicing!'}
+              {analysis.technique_score >= 90 ? 'Outstanding' :
+               analysis.technique_score >= 80 ? 'Excellent' :
+               analysis.technique_score >= 70 ? 'Great' :
+               analysis.technique_score >= 60 ? 'Good' :
+               'Keep practicing'}
             </Text>
           </Card>
         </Animated.View>
@@ -158,7 +153,7 @@ export default function AnalysisScreen() {
           <Card style={styles.feedbackCard}>
             <View style={styles.feedbackHeader}>
               <Ionicons name="walk" size={24} color={COLORS.accent} />
-              <Text style={styles.feedbackTitle}>👣 Footwork</Text>
+              <Text style={styles.feedbackTitle}>Footwork</Text>
             </View>
             <Text style={styles.feedbackText}>{analysis.footwork_feedback}</Text>
           </Card>
@@ -168,7 +163,7 @@ export default function AnalysisScreen() {
           <Card style={styles.feedbackCard}>
             <View style={styles.feedbackHeader}>
               <Ionicons name="time" size={24} color={COLORS.accentBlue} />
-              <Text style={styles.feedbackTitle}>⏱️ Swing Timing</Text>
+              <Text style={styles.feedbackTitle}>Swing Timing</Text>
             </View>
             <Text style={styles.feedbackText}>{analysis.swing_timing}</Text>
           </Card>
@@ -178,7 +173,7 @@ export default function AnalysisScreen() {
           <Card style={styles.feedbackCard}>
             <View style={styles.feedbackHeader}>
               <Ionicons name="hand-left" size={24} color={COLORS.accent} />
-              <Text style={styles.feedbackTitle}>🎯 Contact Point</Text>
+              <Text style={styles.feedbackTitle}>Contact Point</Text>
             </View>
             <Text style={styles.feedbackText}>{analysis.contact_point}</Text>
           </Card>
@@ -189,7 +184,7 @@ export default function AnalysisScreen() {
           <Card style={styles.fixesCard}>
             <View style={styles.fixesHeader}>
               <Ionicons name="bulb" size={28} color={COLORS.warning} />
-              <Text style={styles.fixesTitle}>💡 Key Improvements</Text>
+              <Text style={styles.fixesTitle}>Key Improvements</Text>
             </View>
             {analysis.suggested_fixes.map((fix, index) => (
               <Animated.View
@@ -209,7 +204,7 @@ export default function AnalysisScreen() {
           <Card style={styles.proCard}>
             <View style={styles.proHeader}>
               <Ionicons name="trophy" size={28} color={COLORS.accentBlue} />
-              <Text style={styles.proTitle}>🏆 Pro Comparison</Text>
+              <Text style={styles.proTitle}>Pro Comparison</Text>
             </View>
             <Text style={styles.proText}>{analysis.pro_comparison}</Text>
           </Card>
@@ -218,20 +213,20 @@ export default function AnalysisScreen() {
         {/* Action Buttons */}
         <Animated.View entering={FadeInUp.delay(1800).duration(600)} style={styles.actions}>
           <Button
-            title="🎥 Upload Another"
+            title="Upload Another"
             onPress={() => router.push('/home/upload')}
             variant="primary"
             size="large"
           />
           <Button
-            title="📋 Get Training Plan"
+            title="Get Training Plan"
             onPress={() => router.push('/home/training')}
             variant="secondary"
             size="large"
             style={{ marginTop: SPACING.md }}
           />
           <Button
-            title="🏠 Back to Dashboard"
+            title="Back to Dashboard"
             onPress={() => router.push('/home')}
             variant="outline"
             size="medium"

@@ -229,13 +229,13 @@ export default function WorkoutSessionScreen() {
             <View style={styles.iconContainer}>
               <Ionicons name="fitness" size={80} color={COLORS.accent} />
             </View>
-            <Text style={styles.readyTitle}>Ready to Train?</Text>
+            <Text style={styles.readyTitle}>Ready to Train</Text>
             <Text style={styles.readySubtitle}>{plan?.goal}</Text>
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(200).duration(600)}>
             <Card style={styles.overviewCard}>
-              <Text style={styles.overviewTitle}>📋 Workout Overview</Text>
+              <Text style={styles.overviewTitle}>Workout Overview</Text>
               <View style={styles.overviewStats}>
                 <View style={styles.overviewStat}>
                   <Text style={styles.overviewValue}>{totalDrills}</Text>
@@ -256,7 +256,7 @@ export default function WorkoutSessionScreen() {
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(400).duration(600)}>
-            <Text style={styles.drillsListTitle}>Today's Drills:</Text>
+            <Text style={styles.drillsListTitle}>Today's Drills</Text>
             {drills.map((drill, index) => (
               <Animated.View
                 key={index}
@@ -279,7 +279,7 @@ export default function WorkoutSessionScreen() {
 
           <Animated.View entering={FadeInUp.delay(1000).duration(600)} style={styles.startButtonContainer}>
             <Button
-              title="🚀 Start Workout"
+              title="Start Workout"
               onPress={startWorkout}
               variant="primary"
               size="large"
@@ -302,8 +302,8 @@ export default function WorkoutSessionScreen() {
             <View style={styles.trophyContainer}>
               <Ionicons name="trophy" size={100} color={COLORS.warning} />
             </View>
-            <Text style={styles.completeTitle}>🎉 Workout Complete!</Text>
-            <Text style={styles.completeSubtitle}>Great job crushing it!</Text>
+            <Text style={styles.completeTitle}>Workout Complete</Text>
+            <Text style={styles.completeSubtitle}>Great work today</Text>
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(400).duration(600)}>
@@ -331,22 +331,22 @@ export default function WorkoutSessionScreen() {
 
           <Animated.View entering={FadeInUp.delay(600).duration(600)}>
             <Card style={styles.motivationCard}>
-              <Text style={styles.motivationEmoji}>💪</Text>
+              <Ionicons name="ribbon" size={60} color={COLORS.accent} style={styles.motivationIcon} />
               <Text style={styles.motivationText}>
-                Consistency is key! Keep training regularly to see improvement.
+                Consistency is key. Keep training regularly to see improvement.
               </Text>
             </Card>
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(800).duration(600)} style={styles.completeActions}>
             <Button
-              title="🏠 Back to Training"
+              title="Back to Training"
               onPress={() => router.push('/home/training')}
               variant="primary"
               size="large"
             />
             <Button
-              title="📊 View Progress"
+              title="View Progress"
               onPress={() => router.push('/home')}
               variant="outline"
               size="large"
@@ -379,20 +379,20 @@ export default function WorkoutSessionScreen() {
               </View>
             </Animated.View>
 
-            <Text style={styles.nextUpLabel}>Coming up next:</Text>
+            <Text style={styles.nextUpLabel}>Coming up next</Text>
             {drills[currentDrillIndex + 1] && (
               <Card style={styles.nextDrillCard}>
                 <Text style={styles.nextDrillName}>
                   {drills[currentDrillIndex + 1].name}
                 </Text>
                 <Text style={styles.nextDrillMeta}>
-                  {drills[currentDrillIndex + 1].reps} reps • {drills[currentDrillIndex + 1].duration}
+                  {drills[currentDrillIndex + 1].reps} reps · {drills[currentDrillIndex + 1].duration}
                 </Text>
               </Card>
             )}
 
             <Button
-              title="⏭️ Skip Rest"
+              title="Skip Rest"
               onPress={skipRest}
               variant="outline"
               size="large"
@@ -464,7 +464,7 @@ export default function WorkoutSessionScreen() {
             <Text style={styles.timerLabel}>Time Elapsed</Text>
             <Text style={styles.timerValue}>{formatTime(timeElapsed)}</Text>
             <Text style={styles.timerHint}>
-              {isPaused ? '⏸️ Paused' : '⏱️ Recording'}
+              {isPaused ? 'Paused' : 'Recording'}
             </Text>
           </Card>
         </Animated.View>
@@ -472,7 +472,7 @@ export default function WorkoutSessionScreen() {
         {/* Instructions */}
         <Animated.View entering={FadeInUp.delay(400).duration(400)}>
           <Card style={styles.instructionsCard}>
-            <Text style={styles.instructionsTitle}>💡 How to do it:</Text>
+            <Text style={styles.instructionsTitle}>How to do it</Text>
             <Text style={styles.instructionsText}>{currentDrill.description}</Text>
             
             <View style={styles.tipsList}>
@@ -500,7 +500,7 @@ export default function WorkoutSessionScreen() {
           </TouchableOpacity>
 
           <Button
-            title="✅ Done!"
+            title="Done"
             onPress={completeDrill}
             variant="primary"
             size="large"
@@ -896,8 +896,7 @@ const styles = StyleSheet.create({
     padding: SPACING.xl,
     marginBottom: SPACING.lg,
   },
-  motivationEmoji: {
-    fontSize: 60,
+  motivationIcon: {
     marginBottom: SPACING.md,
   },
   motivationText: {

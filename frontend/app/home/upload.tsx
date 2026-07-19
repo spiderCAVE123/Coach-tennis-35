@@ -231,9 +231,9 @@ export default function UploadScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Animated.View entering={FadeInDown.duration(600)} style={styles.header}>
-          <Text style={styles.title}>🎾 Upload Your Swing</Text>
+          <Text style={styles.title}>Upload Your Swing</Text>
           <Text style={styles.subtitle}>
-            Let AI analyze your technique and boost your game!
+            Get AI-powered feedback on your technique
           </Text>
         </Animated.View>
 
@@ -245,7 +245,7 @@ export default function UploadScreen() {
                 <Animated.View entering={BounceIn.duration(800)}>
                   <Ionicons name="checkmark-circle" size={80} color={COLORS.success} />
                 </Animated.View>
-                <Text style={styles.selectedText}>Video Ready! 🎉</Text>
+                <Text style={styles.selectedText}>Video Ready</Text>
                 <Text style={styles.selectedSubtext}>
                   Duration: {Math.round(selectedVideo.duration || 0)}s
                 </Text>
@@ -261,7 +261,7 @@ export default function UploadScreen() {
               <View style={styles.uploadOptions}>
                 <TouchableOpacity style={styles.uploadOption} onPress={recordVideo}>
                   <Ionicons name="videocam" size={56} color={COLORS.accentBlue} />
-                  <Text style={styles.optionText}>Record Now</Text>
+                  <Text style={styles.optionText}>Record</Text>
                   <Text style={styles.optionSubtext}>Capture your swing</Text>
                 </TouchableOpacity>
                 
@@ -269,8 +269,8 @@ export default function UploadScreen() {
                 
                 <TouchableOpacity style={styles.uploadOption} onPress={pickVideo}>
                   <Ionicons name="folder-open" size={56} color={COLORS.accent} />
-                  <Text style={styles.optionText}>Choose Video</Text>
-                  <Text style={styles.optionSubtext}>From your gallery</Text>
+                  <Text style={styles.optionText}>Upload</Text>
+                  <Text style={styles.optionSubtext}>From gallery</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -279,7 +279,7 @@ export default function UploadScreen() {
 
         {/* Shot Type Selection */}
         <Animated.View entering={FadeIn.delay(400).duration(600)} style={styles.section}>
-          <Text style={styles.sectionTitle}>⚡ Select Your Shot</Text>
+          <Text style={styles.sectionTitle}>Select Shot Type</Text>
           <View style={styles.shotGrid}>
             {shotTypes.map((shot, index) => (
               <Animated.View
@@ -318,10 +318,10 @@ export default function UploadScreen() {
           <Button
             title={
               uploading
-                ? `Uploading... ${uploadProgress}%`
+                ? `Uploading ${uploadProgress}%`
                 : analyzing
-                ? '🔬 Analyzing Your Technique...'
-                : '🚀 Analyze My Swing!'
+                ? 'Analyzing...'
+                : 'Analyze My Swing'
             }
             onPress={uploadAndAnalyze}
             variant="primary"
@@ -346,12 +346,12 @@ export default function UploadScreen() {
             )}
             <Text style={styles.loadingText}>
               {uploading
-                ? '📤 Uploading your video...'
-                : '🤖 AI is analyzing your technique...'}
+                ? 'Uploading video...'
+                : 'AI is analyzing your technique'}
             </Text>
             <Text style={styles.loadingSubtext}>
               {uploading
-                ? 'Almost there!'
+                ? 'Almost there'
                 : 'This may take a few moments'}
             </Text>
             {uploading && (
@@ -370,17 +370,17 @@ export default function UploadScreen() {
         {/* Tips */}
         <Animated.View entering={FadeIn.delay(1000).duration(600)}>
           <Card style={styles.tipsCard}>
-            <Text style={styles.tipsTitle}>💡 Pro Tips</Text>
+            <Text style={styles.tipsTitle}>Recording Tips</Text>
             <View style={styles.tipItem}>
-              <Text style={styles.tipEmoji}>📹</Text>
+              <Ionicons name="videocam-outline" size={20} color={COLORS.accent} />
               <Text style={styles.tipText}>Film from the side angle</Text>
             </View>
             <View style={styles.tipItem}>
-              <Text style={styles.tipEmoji}>☀️</Text>
+              <Ionicons name="sunny-outline" size={20} color={COLORS.accent} />
               <Text style={styles.tipText}>Ensure good lighting</Text>
             </View>
             <View style={styles.tipItem}>
-              <Text style={styles.tipEmoji}>⏱️</Text>
+              <Ionicons name="time-outline" size={20} color={COLORS.accent} />
               <Text style={styles.tipText}>Keep it 5-30 seconds</Text>
             </View>
           </Card>
@@ -421,7 +421,6 @@ const styles = StyleSheet.create({
   progressBarFill: { height: '100%', backgroundColor: COLORS.accent },
   tipsCard: { backgroundColor: COLORS.secondary },
   tipsTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.white, marginBottom: SPACING.md },
-  tipItem: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.sm },
-  tipEmoji: { fontSize: FONT_SIZES.xl, marginRight: SPACING.md },
+  tipItem: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.sm, gap: SPACING.md },
   tipText: { fontSize: FONT_SIZES.md, color: COLORS.lightGray },
 });

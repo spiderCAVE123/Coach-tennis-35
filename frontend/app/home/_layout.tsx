@@ -75,6 +75,24 @@ export default function HomeLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="analysis"
+        options={{
+          href: null, // Hide from tabs
+        }}
+      />
+      <Tabs.Screen
+        name="matches"
+        options={{
+          href: null, // Hide from tabs
+        }}
+      />
+      <Tabs.Screen
+        name="workout-session"
+        options={{
+          href: null, // Hide from tabs
+        }}
+      />
     </Tabs>
   );
 }

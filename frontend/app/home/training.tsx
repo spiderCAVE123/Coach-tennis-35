@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { Card } from '../../src/components/Card';
 import { Button } from '../../src/components/Button';
 import { COLORS, SPACING, FONT_SIZES } from '../../src/constants/theme';
@@ -17,6 +18,7 @@ import api from '../../src/services/api';
 import { TrainingPlan } from '../../src/types';
 
 export default function TrainingScreen() {
+  const router = useRouter();
   const [plans, setPlans] = useState<TrainingPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -209,8 +211,11 @@ export default function TrainingScreen() {
               </View>
 
               <Button
-                title="Start Training"
-                onPress={() => Alert.alert('Training', 'Start your training session!')}
+                title="🎯 Start Training"
+                onPress={() => router.push({
+                  pathname: '/home/workout-session',
+                  params: { plan: JSON.stringify(plan) }
+                })}
                 variant="primary"
                 size="medium"
               />

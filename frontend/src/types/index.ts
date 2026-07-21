@@ -19,6 +19,8 @@ export interface VideoAnalysis {
   balance_rating: number;
   suggested_fixes: string[];
   pro_comparison: string;
+  annotated_image_base64?: string;
+  measurements?: Record<string, number>;
 }
 
 export interface Video {
